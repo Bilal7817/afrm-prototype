@@ -11,7 +11,7 @@ The prototype:
 
 ## Quick start
 
-Requires Python 3.14 (pinned to 3.14.6 in `.python-version`).
+Requires Python 3.14 (pinned to 3.14.9 in `.python-version`).
 
 ```bash
 python3.14 -m venv .venv

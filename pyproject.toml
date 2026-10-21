@@ -38,7 +38,7 @@ quote-style = "double"
 python_version = "3.14"
 strict = true
 warn_unreachable = true
-files = ["src", "tests", "bench"]
+files = ["src", "tests"]
 
 # NumPy is a benchmark-only dependency and is not installed in CI.
 [[tool.mypy.overrides]]
