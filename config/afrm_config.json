@@ -1,0 +1,58 @@
+{
+  "_comment": "Illustrative prototype values only. Not derived from any certified aircraft or operator fuel policy.",
+  "aircraft": {
+    "name": "Generic twin-turbofan (fictional)",
+    "cruise_fuel_flow_kg_h": 2400.0,
+    "planned_ground_speed_km_h": 800.0,
+    "holding_fuel_flow_kg_h": 2000.0,
+    "taxi_fuel_kg": 200.0
+  },
+  "route": {
+    "origin": "ORIGIN",
+    "destination": "DEST",
+    "alternate": "ALTN",
+    "trip_distance_km": 1500.0,
+    "alternate_distance_km": 250.0
+  },
+  "reserve_policy": {
+    "contingency_fraction": 0.05,
+    "final_reserve_h": 0.5
+  },
+  "monitoring": {
+    "sample_interval_s": 60.0,
+    "max_gap_s": 120.0,
+    "smoothing_window": 5,
+    "fuel_flow_min_kg_h": 0.0,
+    "fuel_flow_max_kg_h": 10000.0,
+    "ground_speed_min_km_h": 100.0,
+    "ground_speed_max_km_h": 1200.0
+  },
+  "scenarios": [
+    {
+      "name": "nominal",
+      "description": "Planned conditions throughout",
+      "loaded_fuel_kg": 7000.0,
+      "headwind_after_km": null,
+      "headwind_ground_speed_km_h": null
+    },
+    {
+      "name": "headwind",
+      "description": "Ground speed falls from 800 to 600 km/h after 750 km; fuel flow unchanged",
+      "loaded_fuel_kg": 7000.0,
+      "headwind_after_km": 750.0,
+      "headwind_ground_speed_km_h": 600.0
+    },
+    {
+      "name": "low_uplift",
+      "description": "Hypothetical replay of a flight loaded below minimum block fuel",
+      "loaded_fuel_kg": 5500.0,
+      "headwind_after_km": null,
+      "headwind_ground_speed_km_h": null
+    }
+  ],
+  "noise": {
+    "fuel_flow_rel_sigma": 0.01,
+    "fob_sigma_kg": 10.0,
+    "ground_speed_sigma_km_h": 5.0
+  }
+}
