@@ -1,0 +1,3 @@
+# Benchmark-only dependency. NOT required to run the AFRM prototype.
+# Used to compare standard-library streaming against NumPy batch processing.
+numpy==2.5.4

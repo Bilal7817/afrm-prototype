@@ -1,0 +1,9 @@
+"# macOS 15.6, arm64, 8 logical CPUs, Python 3.14.9"
+# numpy_import_ms,35.34,numpy_import_mib,8.04
+approach,samples,median_runtime_ms,peak_memory_mib,repeats
+Data source only (baseline),200,0.2077,0.0030,15
+Python streaming,200,0.4438,0.0050,15
+NumPy batch,200,0.2807,0.0360,15
+Data source only (baseline),1000000,998.0482,0.0029,5
+Python streaming,1000000,2175.2950,0.0049,5
+NumPy batch,1000000,1351.2135,274.9161,5
