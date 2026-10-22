@@ -1,0 +1,4 @@
+scenario,loaded_fuel_kg,dispatch,status_sequence,final_plf_kg,flight_time_min
+nominal,7000,DISPATCHABLE,GREEN,2302.1,112.5
+headwind,7000,DISPATCHABLE,GREEN -> AMBER,1538.1,131.2
+low_uplift,5500,NOT DISPATCHABLE,RED,802.1,112.5
