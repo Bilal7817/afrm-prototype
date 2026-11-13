@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | AFRM Test Plan |
-| Revision | 1 – baseline test campaign |
+| Revision | 1.1 – baseline test campaign |
 | Software under test | AFRM v1.0.0 (tag `v1.0.0`, commit `755a087`) |
 | Date | 13 November 2026 |
 
@@ -53,8 +53,7 @@ Each function is assessed for its worst credible failure, assuming its output is
 | Scenario testing | Show end-to-end behaviour on realistic flights | Nominal, headwind, low uplift |
 | Robustness and fault-injection testing | Show behaviour under abnormal conditions | Abnormal fuel loss (F7), intermittent invalid data, timestamp gaps |
 | Statistical (multi-seed) testing | Measure behaviour under sensor noise rather than one random sample | Status stability across seeded noisy flights |
-| Property-based testing (Hypothesis) | Check invariants across generated inputs | Status classification ordering; invalid-sample handling |
-| Structural coverage analysis | Measure which code the tests exercise | Statement and branch coverage; MC/DC on selected decisions |
+| Structural coverage analysis | Measure which code the tests exercise | Statement and branch coverage; MC/DC on the input range-check decision |
 | Performance profiling | Identify where processing time is spent | `cProfile` of `afrm run-all`; repeated benchmark runs |
 | Interactive debugging | Inspect internal state during a failure scenario | VS Code debugger in the abnormal fuel-loss case |
 
@@ -64,7 +63,7 @@ Each function is assessed for its worst credible failure, assuming its output is
 |---|---|
 | Local hardware | MacBook Air, Apple Silicon (arm64), 8 logical CPUs, macOS 15.6 |
 | Interpreter | Python 3.14.9 (pinned in `.python-version`) |
-| Test tools | pytest 9.1.1, pytest-cov 7.1.0, coverage 7.16.2; Hypothesis (pinned when added) |
+| Test tools | pytest 9.1.1, pytest-cov 7.1.0, coverage 7.16.2 |
 | Static analysis | Ruff 0.17.1, mypy 2.4.0 (`--strict`) |
 | Profiling and debugging | `cProfile` (standard library); VS Code Python debugger |
 | CI | GitHub Actions, `ubuntu-latest` and `macos-latest` |
@@ -77,12 +76,12 @@ Each function is assessed for its worst credible failure, assuming its output is
 |---|---|---|---|---|
 | TC-B01 | Full regression suite at v1.0.0 | Requirements-based | 90 tests pass | Pass/fail |
 | TC-B02 | Structural coverage | Coverage analysis | 100% statement and branch coverage | Pass/fail |
-| TC-B03 | MC/DC analysis of compound validation decisions | Structural (MC/DC) | Each condition shown to independently affect its decision, or gaps recorded | Pass/fail |
+| TC-B03 | MC/DC analysis of the input range-check decision (`_in_range`: finite, ≥ low, ≤ high) | Structural (MC/DC) | Each condition shown to independently affect the decision, or gaps recorded | Pass/fail |
 | TC-B04 | Abnormal fuel loss: nominal flight plus 300, 600 and 1,200 kg/h loss from 40 min (seed 42) | Fault injection | Record first AMBER and RED times and actual landing fuel; compare with a reference that knows the loss rate | Characterisation |
 | TC-B05 | Status stability on nominal flights across 100 seeds | Statistical | Record the number of flights whose status ever leaves GREEN | Characterisation |
-| TC-B06 | Intermittent invalid samples during a flight | Robustness | Monitoring continues; invalid samples reported; valid statuses unaffected | Pass/fail |
-| TC-B07 | Property tests: status ordering is monotonic in predicted landing fuel; invalid samples never change the smoothing state | Property-based | No counterexample found | Pass/fail |
-| TC-B08 | Performance profile of `afrm run-all`, plus benchmark median runtimes | Profiling | Record the functions with the largest cumulative time and the median runtimes | Characterisation |
+| TC-B06a | Isolated invalid samples (every 7th fuel-flow reading corrupted) | Robustness | Only the corrupted samples are reported DATA INVALID; monitoring continues; statuses unaffected | Pass/fail |
+| TC-B06b | Two consecutive invalid samples | Robustness | Record how the 120 s gap rule treats the next valid sample | Characterisation |
+| TC-B07 | Performance profile of `afrm run-all`, plus benchmark median runtimes | Profiling | Record the functions with the largest cumulative time and the median runtimes | Characterisation |
 
 **Characterisation** tests record what the baseline actually does. They have no pass/fail outcome on v1.0.0; their findings are used to identify and justify changes.
 
@@ -93,7 +92,7 @@ Each function is assessed for its worst credible failure, assuming its output is
 **Exit:**
 - all baseline test cases executed;
 - pass/fail tests passed, or failures recorded with analysis;
-- results stored in `results/baseline/` with the commit hash and environment details;
+- results stored in `results/baseline/` with the commit hash and environment details (summary in `results/baseline/SUMMARY.md`);
 - findings reviewed and any resulting change requests raised.
 
 ## 7. Revision history
@@ -101,3 +100,4 @@ Each function is assessed for its worst credible failure, assuming its output is
 | Revision | Date | Description |
 |---|---|---|
 | 1 | 13 November 2026 | Initial plan: criticality assessment and baseline test campaign |
+| 1.1 | 13 November 2026 | Scope simplified: property-based testing removed; MC/DC limited to the input range-check decision; TC-B06 split into isolated and consecutive invalid samples. Baseline results in `results/baseline/SUMMARY.md`. |

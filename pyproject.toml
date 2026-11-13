@@ -22,7 +22,7 @@ where = ["src"]
 [tool.ruff]
 target-version = "py314"
 line-length = 100
-src = ["src", "tests", "bench"]
+src = ["src", "tests", "bench", "scripts"]
 
 [tool.ruff.lint]
 # E/F: pycodestyle + Pyflakes (PEP 8, undefined names, unused imports)
@@ -38,7 +38,7 @@ quote-style = "double"
 python_version = "3.14"
 strict = true
 warn_unreachable = true
-files = ["src", "tests", "bench"]
+files = ["src", "tests", "bench", "scripts"]
 
 # NumPy is a benchmark-only dependency and is not installed in CI.
 [[tool.mypy.overrides]]

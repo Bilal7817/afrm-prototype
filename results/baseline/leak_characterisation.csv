@@ -1,0 +1,5 @@
+leak_rate_kg_h,actual_landing_fuel_kg,actual_landing_status,reference_first_not_green_min,reference_first_red_min,baseline_first_not_green_min,baseline_first_red_min
+0.0,2300.0,GREEN,never,never,never,never
+300.0,1937.5,GREEN,never,never,never,never
+600.0,1575.0,AMBER,41,never,94,never
+1200.0,850.0,RED,41,41,67,105
