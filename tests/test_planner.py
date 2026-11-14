@@ -79,6 +79,8 @@ def test_config_change_changes_plan_without_code_change() -> None:
         ("monitoring", "smoothing_window", 0),
         ("monitoring", "sample_interval_s", 0.0),
         ("reserve_policy", "contingency_fraction", 1.5),
+        ("leak_detection", "window_s", 0.0),
+        ("leak_detection", "threshold_kg", -75.0),
     ],
 )
 def test_invalid_config_is_rejected(section: str, field: str, value: float) -> None:
