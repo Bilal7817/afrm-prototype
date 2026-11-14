@@ -26,28 +26,22 @@ def test_nominal_status_stable_across_100_seeds(config: AfrmConfig, plan: FuelPl
     assert escalated == 0
 
 
-@pytest.mark.xfail(
-    strict=True, reason="DR-001: inexact simulated timestamps (fixed by DR-001 change)"
-)
 @pytest.mark.req("REQ-06")
 def test_simulated_timestamps_are_exact_multiples_of_interval(config: AfrmConfig) -> None:
-    """DR-001 root cause: timestamps are computed as i * (60 / 3600) * 3600 and
-    carry floating-point error, e.g. 3899.9999999999995 s instead of 3900 s."""
+    """DR-001 regression: timestamps must be exact multiples of the interval.
+    v1.0.0 produced e.g. 3899.9999999999995 s instead of 3900 s."""
     samples = generate_flight(config, config.scenario("nominal"), seed=42)
     inexact = [s.time_s for i, s in enumerate(samples[:-1]) if s.time_s != 60.0 * i]
     assert inexact == []
 
 
-@pytest.mark.xfail(
-    strict=True, reason="DR-001: inexact simulated timestamps (fixed by DR-001 change)"
-)
 @pytest.mark.req("REQ-06", "REQ-07")
 def test_isolated_invalid_samples_are_skipped(config: AfrmConfig, plan: FuelPlan) -> None:
     """TC-B06a: every 7th fuel-flow reading corrupted; monitoring continues.
 
-    Baseline finding (DR-001): after the invalid sample at index 66, the next
-    valid sample arrives 120.00000000000045 s after the last accepted one, so
-    the 120 s gap rule rejects it as well. One reading is lost unnecessarily.
+    DR-001 regression: in v1.0.0 the valid sample after invalid index 66
+    arrived 120.00000000000045 s after the last accepted one and was wrongly
+    rejected by the 120 s gap rule.
     """
     clean = generate_flight(config, config.scenario("nominal"), seed=42)
     corrupted = [
@@ -55,7 +49,7 @@ def test_isolated_invalid_samples_are_skipped(config: AfrmConfig, plan: FuelPlan
         for i, s in enumerate(clean)
     ]
     results = list(monitor_flight(corrupted, plan, config.monitoring))
-    # DR-001: valid sample 67 (after invalid 66) is rejected as a gap in v1.0.0.
+    # DR-001: valid sample 67 (after invalid 66) must be accepted.
     assert results[67].status is FuelStatus.GREEN, results[67].reason
 
     invalid = [a for a in results if a.status is FuelStatus.DATA_INVALID]

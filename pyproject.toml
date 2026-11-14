@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "afrm"
-version = "1.0.0"
+version = "1.0.1"
 description = "Aircraft Fuel and Range Management (AFRM) prototype - simulated, non-operational"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"

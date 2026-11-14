@@ -46,16 +46,20 @@ def generate_flight(
     arrival_h = switch_h + (trip_km - switch_km) / slow_gs
 
     # Sample every interval, plus a final sample on arrival.
-    step_h = config.monitoring.sample_interval_s / 3600.0
-    times_h = []
+    # Timestamps are built in whole seconds so they are exact multiples of the
+    # interval (DR-001); hours are derived from seconds, not the other way round.
+    interval_s = config.monitoring.sample_interval_s
+    arrival_s = arrival_h * 3600.0
+    times_s = []
     i = 0
-    while i * step_h < arrival_h:
-        times_h.append(i * step_h)
+    while i * interval_s < arrival_s:
+        times_s.append(float(i * interval_s))
         i += 1
-    times_h.append(arrival_h)
+    times_s.append(arrival_s)
 
     samples = []
-    for t_h in times_h:
+    for time_s in times_s:
+        t_h = time_s / 3600.0
         if t_h < switch_h:
             distance_km, gs = planned_gs * t_h, planned_gs
         else:
@@ -68,7 +72,7 @@ def generate_flight(
             gs += rng.gauss(0.0, noise.ground_speed_sigma_km_h)
         samples.append(
             FuelSample(
-                time_s=t_h * 3600.0,
+                time_s=time_s,
                 fob_kg=fob_kg,
                 fuel_flow_kg_h=measured_flow,
                 ground_speed_km_h=gs,
