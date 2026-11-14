@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+- Change request CR-001, suspected fuel leak detection (`docs/CR-001-leak-detection.md`), with requirements REQ-11 to REQ-14 and acceptance criteria AC-1 to AC-5.
+
 ### Known issues
 - **F-01:** unexplained fuel loss is not detected; warnings lag a loss-aware reference by up to 64 min (TC-B04). To be addressed by CR-001.
 

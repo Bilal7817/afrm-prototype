@@ -1,6 +1,6 @@
 # AFRM Requirements and Traceability
 
-Specification v2.1, frozen 21 October 2026. All values are illustrative and held in
+Specification v2.1, frozen 21 October 2026; REQ-11 to REQ-14 added by CR-001 (14 November 2026). All values are illustrative and held in
 `config/afrm_config.json`; they are not regulatory requirements for any real operation.
 
 ## Requirements
@@ -17,6 +17,10 @@ Specification v2.1, frozen 21 October 2026. All values are illustrative and held
 | REQ-08 | All parameters are loaded from JSON configuration and validated. |
 | REQ-09 | The same seed produces identical simulated data. |
 | REQ-10 | Units are kg, km, km/h, kg/h, s (timestamps) and h (durations) throughout, named in every field. |
+| REQ-11 | (CR-001) For each accepted sample, the leak detector keeps a sliding window starting at the latest accepted sample at least 10 min old. Expected burn = Σ mean fuel flow of each interval × interval duration (trapezoidal rule); observed burn = fuel on board at window start − current fuel on board; discrepancy = observed − expected. Evaluated only when the window spans at least 10 min. |
+| REQ-12 | (CR-001) SUSPECTED FUEL LEAK is raised when the discrepancy exceeds 75 kg, re-evaluated at every accepted sample. Invalid samples never enter the window, and the window is cleared whenever the smoothing window is cleared after a gap (REQ-07). |
+| REQ-13 | (CR-001) While the alert is active, leak rate = discrepancy ÷ window duration and leak-adjusted PLF = fuel on board − (smoothed fuel flow + leak rate) × (remaining distance ÷ ground speed). The standard PLF (REQ-03) is always reported unchanged. |
+| REQ-14 | (CR-001) While the alert is active, the status rule (REQ-05) is applied to the lower of the standard and leak-adjusted PLF; otherwise to the standard PLF. |
 
 ## Traceability matrix
 
