@@ -51,3 +51,20 @@ def test_run_all_writes_results(tmp_path: Path, capsys: pytest.CaptureFixture[st
     assert float(rows["headwind"]["final_plf_kg"]) == pytest.approx(1550.0, abs=0.1)
     assert (tmp_path / "plf_timeseries.csv").exists()
     assert "run-all" in capsys.readouterr().out
+
+
+@pytest.mark.req("REQ-12", "REQ-13")
+def test_monitor_shows_suspected_leak(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main([*CFG, "monitor", "--leak-rate", "1200"]) == 0
+    out = capsys.readouterr().out
+    assert "SUSPECTED FUEL LEAK" in out
+    assert "RED" in out
+
+
+@pytest.mark.req("REQ-13")
+def test_run_all_series_includes_leak_columns(tmp_path: Path) -> None:
+    assert main([*CFG, "run-all", "--out", str(tmp_path)]) == 0
+    with (tmp_path / "plf_timeseries.csv").open(encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert {"leak_alert", "leak_adjusted_plf_kg"} <= rows[0].keys()
+    assert all(r["leak_alert"] == "0" for r in rows)  # no leaks in the standard scenarios

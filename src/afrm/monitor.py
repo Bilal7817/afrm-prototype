@@ -5,6 +5,9 @@ REQ-04  fuel flow smoothed over up to N valid readings; latest ground speed
 REQ-05  GREEN / AMBER / RED thresholds
 REQ-06  sample validation rules
 REQ-07  DATA INVALID handling and timestamp recovery
+REQ-12  leak detector fed with accepted samples only; cleared after a gap
+REQ-13  leak-adjusted predicted landing fuel (standard PLF unchanged)
+REQ-14  status from the lower PLF while a leak alert is active
 
 The monitor processes one sample at a time and keeps only a fixed-size
 window of fuel-flow readings, so memory use is O(1) per flight.
@@ -16,7 +19,15 @@ import math
 from collections import deque
 from collections.abc import Iterable, Iterator
 
-from afrm.models import Assessment, FuelPlan, FuelSample, FuelStatus, MonitoringLimits
+from afrm.leak import LeakDetector
+from afrm.models import (
+    Assessment,
+    FuelPlan,
+    FuelSample,
+    FuelStatus,
+    LeakSettings,
+    MonitoringLimits,
+)
 
 # ------------------------------------------------------------ pure functions
 
@@ -83,11 +94,18 @@ def check_values(sample: FuelSample, limits: MonitoringLimits) -> str | None:
 
 
 class FuelMonitor:
-    """Streaming fuel monitor for one flight."""
+    """Streaming fuel monitor for one flight.
 
-    def __init__(self, plan: FuelPlan, limits: MonitoringLimits) -> None:
+    Leak detection (CR-001) is enabled by passing ``leak`` settings. Without
+    them the monitor behaves exactly as v1.0.1.
+    """
+
+    def __init__(
+        self, plan: FuelPlan, limits: MonitoringLimits, leak: LeakSettings | None = None
+    ) -> None:
         self._plan = plan
         self._limits = limits
+        self._leak = None if leak is None else LeakDetector(leak)
         self._flows: deque[float] = deque(maxlen=limits.smoothing_window)
         # Timestamp that the next sample is checked against: the last accepted
         # sample, or the re-synchronisation point after a data gap (REQ-07).
@@ -120,6 +138,8 @@ class FuelMonitor:
                 # otherwise every later sample would also fail the gap check.
                 self._reference_time_s = sample.time_s
                 self._flows.clear()
+                if self._leak is not None:
+                    self._leak.reset()
                 return self._invalid(sample, "data gap exceeds maximum interval")
 
         # Sample accepted.
@@ -137,13 +157,40 @@ class FuelMonitor:
             smoothed_flow,
             sample.ground_speed_km_h,
         )
-        return Assessment(sample.time_s, classify(plf, self._plan), plf, endurance_h, range_km)
+        status = classify(plf, self._plan)
+        if self._leak is None:
+            return Assessment(sample.time_s, status, plf, endurance_h, range_km)
+
+        check = self._leak.update(sample.time_s, sample.fob_kg, sample.fuel_flow_kg_h)
+        adjusted_plf: float | None = None
+        if check.leak_rate_kg_h is not None:  # set only while the alert is active
+            adjusted_plf = predict_landing_fuel(
+                sample.fob_kg,
+                smoothed_flow + check.leak_rate_kg_h,
+                sample.remaining_km,
+                sample.ground_speed_km_h,
+            )
+            status = classify(min(plf, adjusted_plf), self._plan)
+        return Assessment(
+            sample.time_s,
+            status,
+            plf,
+            endurance_h,
+            range_km,
+            leak_alert=check.alert,
+            discrepancy_kg=check.discrepancy_kg,
+            leak_rate_kg_h=check.leak_rate_kg_h,
+            leak_adjusted_plf_kg=adjusted_plf,
+        )
 
 
 def monitor_flight(
-    samples: Iterable[FuelSample], plan: FuelPlan, limits: MonitoringLimits
+    samples: Iterable[FuelSample],
+    plan: FuelPlan,
+    limits: MonitoringLimits,
+    leak: LeakSettings | None = None,
 ) -> Iterator[Assessment]:
     """Assess samples lazily, one at a time (constant memory)."""
-    monitor = FuelMonitor(plan, limits)
+    monitor = FuelMonitor(plan, limits, leak)
     for sample in samples:
         yield monitor.assess(sample)

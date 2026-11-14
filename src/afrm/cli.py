@@ -5,6 +5,7 @@ Examples::
     afrm plan --scenario nominal
     afrm simulate --scenario headwind --out data/headwind.csv
     afrm monitor --scenario headwind
+    afrm monitor --leak-rate 1200          # simulated leak from 40 min
     afrm monitor --csv data/headwind.csv --scenario headwind
     afrm run-all --out results
 """
@@ -43,14 +44,24 @@ def _format_plan(plan: FuelPlan, scenario: Scenario) -> str:
 
 
 def _transitions(assessments: Sequence[Assessment]) -> list[Assessment]:
-    """First sample of each new status (including the first sample)."""
+    """First sample of each new status or leak-alert state (including the first)."""
     out: list[Assessment] = []
-    previous: FuelStatus | None = None
+    previous: tuple[FuelStatus, bool] | None = None
     for a in assessments:
-        if a.status != previous:
+        state = (a.status, a.leak_alert)
+        if state != previous:
             out.append(a)
-            previous = a.status
+            previous = state
     return out
+
+
+def _status_sequence(assessments: Sequence[Assessment]) -> str:
+    """Status changes only, e.g. 'GREEN -> AMBER'."""
+    out: list[str] = []
+    for a in assessments:
+        if not out or out[-1] != a.status.value:
+            out.append(a.status.value)
+    return " -> ".join(out)
 
 
 def _format_assessment(a: Assessment) -> str:
@@ -59,11 +70,17 @@ def _format_assessment(a: Assessment) -> str:
         return f"  t={minutes:6.1f} min  {a.status.value:<12}  ({a.reason})"
     endurance = "n/a" if a.endurance_h is None else f"{a.endurance_h:5.2f} h"
     rng = "n/a" if a.range_km is None else f"{a.range_km:6,.0f} km"
-    return (
+    line = (
         f"  t={minutes:6.1f} min  {a.status.value:<12}  "
         f"PLF {a.predicted_landing_fuel_kg:7,.0f} kg  "
         f"endurance {endurance}  range {rng}"
     )
+    if a.leak_alert and a.leak_rate_kg_h is not None and a.leak_adjusted_plf_kg is not None:
+        line += (
+            f"\n      SUSPECTED FUEL LEAK  ~{a.leak_rate_kg_h:,.0f} kg/h  "
+            f"leak-adjusted PLF {a.leak_adjusted_plf_kg:7,.0f} kg"
+        )
+    return line
 
 
 def _kg(value: float | None) -> str:
@@ -72,14 +89,21 @@ def _kg(value: float | None) -> str:
 
 
 def _run_monitor(
-    config: AfrmConfig, scenario: Scenario, seed: int, noisy: bool, csv_path: str | None
+    config: AfrmConfig,
+    scenario: Scenario,
+    seed: int,
+    noisy: bool,
+    csv_path: str | None,
+    leak_rate_kg_h: float = 0.0,
 ) -> list[Assessment]:
     plan = plan_fuel(config)
     if csv_path:
         samples = read_csv(csv_path)
     else:
-        samples = generate_flight(config, scenario, seed=seed, noisy=noisy)
-    return list(monitor_flight(samples, plan, config.monitoring))
+        samples = generate_flight(
+            config, scenario, seed=seed, noisy=noisy, leak_rate_kg_h=leak_rate_kg_h
+        )
+    return list(monitor_flight(samples, plan, config.monitoring, config.leak_detection))
 
 
 def cmd_plan(args: argparse.Namespace, config: AfrmConfig) -> int:
@@ -91,7 +115,9 @@ def cmd_plan(args: argparse.Namespace, config: AfrmConfig) -> int:
 
 def cmd_simulate(args: argparse.Namespace, config: AfrmConfig) -> int:
     scenario = config.scenario(args.scenario)
-    samples = generate_flight(config, scenario, seed=args.seed, noisy=not args.no_noise)
+    samples = generate_flight(
+        config, scenario, seed=args.seed, noisy=not args.no_noise, leak_rate_kg_h=args.leak_rate
+    )
     write_csv(samples, args.out)
     print(f"Wrote {len(samples)} samples for '{scenario.name}' to {args.out}")
     return 0
@@ -99,7 +125,9 @@ def cmd_simulate(args: argparse.Namespace, config: AfrmConfig) -> int:
 
 def cmd_monitor(args: argparse.Namespace, config: AfrmConfig) -> int:
     scenario = config.scenario(args.scenario)
-    assessments = _run_monitor(config, scenario, args.seed, not args.no_noise, args.csv)
+    assessments = _run_monitor(
+        config, scenario, args.seed, not args.no_noise, args.csv, args.leak_rate
+    )
     print(f"AFRM monitor - scenario '{scenario.name}'  [{DISCLAIMER}]")
     print(_format_plan(plan_fuel(config), scenario))
     print("Status changes:")
@@ -129,7 +157,7 @@ def cmd_run_all(args: argparse.Namespace, config: AfrmConfig) -> int:
     for scenario in config.scenarios:
         assessments = _run_monitor(config, scenario, args.seed, not args.no_noise, None)
         dispatch = check_dispatch(plan, scenario.loaded_fuel_kg).value
-        statuses = " -> ".join(a.status.value for a in _transitions(assessments))
+        statuses = _status_sequence(assessments)
         final = assessments[-1]
         print(f"  {scenario.name:<11} {dispatch:<17} {statuses}")
 
@@ -150,6 +178,8 @@ def cmd_run_all(args: argparse.Namespace, config: AfrmConfig) -> int:
                     f"{a.time_s / 60:.2f}",
                     a.status.value,
                     _kg(a.predicted_landing_fuel_kg),
+                    "1" if a.leak_alert else "0",
+                    _kg(a.leak_adjusted_plf_kg),
                 ]
             )
 
@@ -167,7 +197,14 @@ def cmd_run_all(args: argparse.Namespace, config: AfrmConfig) -> int:
     )
     _write_rows(
         out_dir / "plf_timeseries.csv",
-        ["scenario", "time_min", "status", "predicted_landing_fuel_kg"],
+        [
+            "scenario",
+            "time_min",
+            "status",
+            "predicted_landing_fuel_kg",
+            "leak_alert",
+            "leak_adjusted_plf_kg",
+        ],
         series,
     )
     print(f"Wrote {out_dir / 'summary.csv'} and {out_dir / 'plf_timeseries.csv'}")
@@ -183,6 +220,14 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--seed", type=int, default=42, help="random seed (default 42)")
         p.add_argument("--no-noise", action="store_true", help="disable sensor noise")
 
+    def leak_option(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--leak-rate",
+            type=float,
+            default=0.0,
+            help="simulated fuel leak in kg/h, starting at 40 min (default 0)",
+        )
+
     p_plan = sub.add_parser("plan", help="pre-departure fuel plan and dispatch check")
     p_plan.add_argument("--scenario", default="nominal")
 
@@ -190,11 +235,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_sim.add_argument("--scenario", default="nominal")
     p_sim.add_argument("--out", required=True)
     common(p_sim)
+    leak_option(p_sim)
 
     p_mon = sub.add_parser("monitor", help="run the in-flight fuel monitor")
     p_mon.add_argument("--scenario", default="nominal")
     p_mon.add_argument("--csv", default=None, help="read samples from CSV instead")
     common(p_mon)
+    leak_option(p_mon)
 
     p_all = sub.add_parser("run-all", help="run every scenario and write results CSVs")
     p_all.add_argument("--out", default="results")

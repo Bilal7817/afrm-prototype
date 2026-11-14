@@ -50,6 +50,11 @@
       "headwind_ground_speed_km_h": null
     }
   ],
+  "leak_detection": {
+    "_comment": "CR-001: sliding window over accepted samples; alert when fuel lost exceeds metered burn by more than the threshold",
+    "window_s": 600.0,
+    "threshold_kg": 75.0
+  },
   "noise": {
     "fuel_flow_rel_sigma": 0.01,
     "fob_sigma_kg": 10.0,

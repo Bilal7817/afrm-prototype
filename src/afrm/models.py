@@ -81,6 +81,14 @@ class NoiseModel:
 
 
 @dataclass(frozen=True, slots=True)
+class LeakSettings:
+    """Suspected fuel leak detection settings (CR-001, REQ-11, REQ-12)."""
+
+    window_s: float
+    threshold_kg: float
+
+
+@dataclass(frozen=True, slots=True)
 class AfrmConfig:
     aircraft: Aircraft
     route: Route
@@ -88,6 +96,7 @@ class AfrmConfig:
     monitoring: MonitoringLimits
     scenarios: tuple[Scenario, ...]
     noise: NoiseModel
+    leak_detection: LeakSettings
 
     def scenario(self, name: str) -> Scenario:
         for scenario in self.scenarios:
@@ -141,7 +150,13 @@ class FuelSample:
 
 @dataclass(frozen=True, slots=True)
 class Assessment:
-    """Monitor output for one sample. Numeric fields are None when invalid."""
+    """Monitor output for one sample. Numeric fields are None when invalid.
+
+    ``predicted_landing_fuel_kg`` is always the standard PLF (REQ-03). The leak
+    fields are filled in when leak detection is enabled (CR-001): the
+    discrepancy once the window spans the full period, and the leak rate and
+    leak-adjusted PLF only while the alert is active.
+    """
 
     time_s: float
     status: FuelStatus
@@ -149,6 +164,10 @@ class Assessment:
     endurance_h: float | None
     range_km: float | None
     reason: str = ""
+    leak_alert: bool = False
+    discrepancy_kg: float | None = None
+    leak_rate_kg_h: float | None = None
+    leak_adjusted_plf_kg: float | None = None
 
 
 # ------------------------------------------------------------------ loading
@@ -168,6 +187,10 @@ def config_from_dict(raw: dict[str, Any]) -> AfrmConfig:
     monitoring = MonitoringLimits(**raw["monitoring"])
     scenarios = tuple(Scenario(**s) for s in raw["scenarios"])
     noise = NoiseModel(**raw["noise"])
+    leak = LeakSettings(
+        window_s=raw["leak_detection"]["window_s"],
+        threshold_kg=raw["leak_detection"]["threshold_kg"],
+    )
 
     for field in (
         "cruise_fuel_flow_kg_h",
@@ -177,12 +200,14 @@ def config_from_dict(raw: dict[str, Any]) -> AfrmConfig:
         _positive(getattr(aircraft, field), f"aircraft.{field}")
     _positive(route.trip_distance_km, "route.trip_distance_km")
     _positive(monitoring.sample_interval_s, "monitoring.sample_interval_s")
+    _positive(leak.window_s, "leak_detection.window_s")
+    _positive(leak.threshold_kg, "leak_detection.threshold_kg")
     if monitoring.smoothing_window < 1:
         raise ValueError("monitoring.smoothing_window must be >= 1")
     if not 0 <= policy.contingency_fraction < 1:
         raise ValueError("reserve_policy.contingency_fraction must be in [0, 1)")
 
-    return AfrmConfig(aircraft, route, policy, monitoring, scenarios, noise)
+    return AfrmConfig(aircraft, route, policy, monitoring, scenarios, noise, leak)
 
 
 def load_config(path: str | Path) -> AfrmConfig:

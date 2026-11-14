@@ -30,14 +30,18 @@ Tests are tagged with `@pytest.mark.req(...)`. Counts include parametrised cases
 |---|---|---|
 | REQ-01 | 2 | `test_planner.py::test_fuel_plan_components_match_hand_calculation`, `test_status_thresholds_derived_from_plan` |
 | REQ-02 | 5 | `test_planner.py::test_exact_minimum_block_fuel_is_dispatchable`, `test_just_below_minimum_block_fuel_is_not_dispatchable`, `test_scenario_dispatch` |
-| REQ-03 | 6 | `test_monitor.py::test_predicted_landing_fuel_hand_calculation`, `test_endurance_and_range_above_final_reserve`, `test_zero_fuel_flow_is_valid_but_endurance_undefined`; `test_scenarios.py` exact scenario tests |
+| REQ-03 | 8 | `test_monitor.py::test_predicted_landing_fuel_hand_calculation`, `test_endurance_and_range_above_final_reserve`, `test_zero_fuel_flow_is_valid_but_endurance_undefined`; `test_scenarios.py` exact scenario tests; `test_baseline_leak.py`; `test_monitor_leak.py::test_detection_is_off_unless_settings_are_given` |
 | REQ-04 | 6 | `test_monitor.py::test_moving_average_of_up_to_five_readings`, `test_ground_speed_uses_latest_reading_not_smoothed`; `test_scenarios.py::test_headwind_exact_transition` |
-| REQ-05 | 34 | `test_monitor.py::test_status_boundaries`; `test_scenarios.py` (exact, noisy and 20-seed headwind tests) |
-| REQ-06 | 25 | `test_monitor.py` validation, range-limit, distance, timestamp and gap tests; `test_simulator.py::test_malformed_csv_value_becomes_data_invalid` |
-| REQ-07 | 19 | `test_monitor.py::test_invalid_sample_is_excluded_from_smoothing`, `test_out_of_order_timestamp_checked_against_last_accepted`, `test_gap_is_rejected_then_monitoring_resynchronises` and others |
-| REQ-08 | 8 | `test_planner.py::test_config_change_changes_plan_without_code_change`, `test_invalid_config_is_rejected`, `test_unknown_scenario_is_reported` |
-| REQ-09 | 26 | `test_simulator.py::test_same_seed_gives_identical_data`, `test_different_seed_gives_different_data`, `test_csv_round_trip`; seeded scenario tests |
+| REQ-05 | 39 | `test_monitor.py::test_status_boundaries`; `test_scenarios.py` (exact, noisy and 20-seed headwind tests); `test_baseline_leak.py`; `test_robustness.py::test_nominal_status_stable_across_100_seeds` |
+| REQ-06 | 36 | `test_monitor.py` validation, range-limit, distance, timestamp and gap tests; `test_simulator.py::test_malformed_csv_value_becomes_data_invalid`; `test_mcdc.py`; `test_robustness.py` |
+| REQ-07 | 22 | `test_monitor.py::test_invalid_sample_is_excluded_from_smoothing`, `test_out_of_order_timestamp_checked_against_last_accepted`, `test_gap_is_rejected_then_monitoring_resynchronises` and others; `test_robustness.py`; `test_monitor_leak.py::test_gap_clears_the_leak_window` |
+| REQ-08 | 10 | `test_planner.py::test_config_change_changes_plan_without_code_change`, `test_invalid_config_is_rejected`, `test_unknown_scenario_is_reported` (including `leak_detection` values) |
+| REQ-09 | 27 | `test_simulator.py::test_same_seed_gives_identical_data`, `test_different_seed_gives_different_data`, `test_csv_round_trip`; seeded scenario tests; `test_robustness.py::test_nominal_status_stable_across_100_seeds` |
 | REQ-10 | 2 | `test_simulator.py::test_samples_are_regular_and_end_at_destination`, `test_csv_round_trip` |
+| REQ-11 | 6 | `test_leak.py::test_no_check_until_window_spans_full_period`, `test_metered_burn_gives_zero_discrepancy`, `test_window_slides_and_drops_old_readings`, `test_skipped_reading_uses_actual_elapsed_time`, `test_skipped_reading_does_not_shorten_a_full_window`, `test_sudden_flow_change_gives_small_bounded_discrepancy` |
+| REQ-12 | 13 | `test_leak.py::test_alert_threshold_boundary` (5 boundary values), `test_skipped_reading_uses_actual_elapsed_time`, `test_reset_clears_the_window`; `test_monitor_leak.py::test_invalid_readings_never_enter_the_window`, `test_gap_clears_the_leak_window`, `test_simulator_leak_matches_baseline_injection`, `test_1200_kg_h_leak_detected_and_red_much_earlier`, `test_threshold_of_infinity_disables_alerts`; `test_cli.py::test_monitor_shows_suspected_leak` |
+| REQ-13 | 7 | `test_leak.py::test_leak_rate_uses_the_same_window`, `test_leak_rate_only_while_alert_is_active`; `test_monitor_leak.py::test_standard_plf_is_unchanged` (AC-5); `test_cli.py` leak tests |
+| REQ-14 | 2 | `test_monitor_leak.py::test_status_uses_lower_plf_only_while_alert_is_active`, `test_1200_kg_h_leak_detected_and_red_much_earlier` |
 
 ## Scenario expectations
 
