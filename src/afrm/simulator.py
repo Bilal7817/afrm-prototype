@@ -26,8 +26,15 @@ def generate_flight(
     *,
     seed: int = 42,
     noisy: bool = True,
+    leak_rate_kg_h: float = 0.0,
+    leak_start_s: float = 2400.0,
 ) -> list[FuelSample]:
-    """Generate one sample per interval from t = 0 until arrival."""
+    """Generate one sample per interval from t = 0 until arrival.
+
+    An optional fuel leak (CR-001 testing) removes fuel from the tanks from
+    ``leak_start_s`` onwards without passing through the flow meter, so fuel
+    on board falls faster than the reported fuel flow implies.
+    """
     rng = random.Random(seed)
     noise = config.noise
     trip_km = config.route.trip_distance_km
@@ -64,7 +71,8 @@ def generate_flight(
             distance_km, gs = planned_gs * t_h, planned_gs
         else:
             distance_km, gs = switch_km + slow_gs * (t_h - switch_h), slow_gs
-        fob_kg = start_fob_kg - flow * t_h
+        leaked_kg = leak_rate_kg_h * max(0.0, time_s - leak_start_s) / 3600.0
+        fob_kg = start_fob_kg - flow * t_h - leaked_kg
         measured_flow = flow
         if noisy:
             fob_kg += rng.gauss(0.0, noise.fob_sigma_kg)
