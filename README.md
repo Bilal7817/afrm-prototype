@@ -11,7 +11,7 @@ The prototype:
 
 ## Quick start
 
-Requires Python 3.14 (pinned to 3.14.9 in `.python-version`).
+Requires Python 3.14 (pinned to 3.14.6 in `.python-version`).
 
 ```bash
 python3.14 -m venv .venv
@@ -24,6 +24,7 @@ afrm monitor --scenario headwind     # status changes for one flight
 afrm plan --scenario low_uplift      # fuel plan and dispatch check
 afrm simulate --scenario nominal --out data/nominal.csv
 afrm monitor --csv data/nominal.csv  # monitor recorded data
+afrm monitor --leak-rate 1200        # simulated fuel leak from 40 min
 ```
 
 Add `--no-noise` for exact, noise-free values and `--seed N` to change the noise.
@@ -57,7 +58,8 @@ importing NumPy, and writes `results/benchmark.csv`. Memory is measured with
 config/afrm_config.json   aircraft, route, reserve policy, limits, scenarios, noise
 src/afrm/models.py        typed immutable data models + JSON loading
 src/afrm/planner.py       fuel plan and dispatch check        (REQ-01, 02)
-src/afrm/monitor.py       validation, smoothing, status       (REQ-03 to 07)
+src/afrm/monitor.py       validation, smoothing, status       (REQ-03 to 07, 13, 14)
+src/afrm/leak.py          suspected fuel leak detection       (REQ-11 to 13)
 src/afrm/simulator.py     seeded flight data, CSV I/O         (REQ-09)
 src/afrm/cli.py           command-line interface
 tests/                    pytest suite tagged by requirement
@@ -78,6 +80,15 @@ where time = distance ÷ ground speed.
 | RED | < final reserve (1,000 kg) |
 | DATA INVALID | Sample fails a validation rule (see `docs/requirements.md`) |
 
+### Suspected fuel leak detection (CR-001, v1.1.0)
+
+Over a 10-minute window, the detector compares the drop in fuel on board with the
+fuel the flow meter reports. If more than 75 kg is unaccounted for, it raises
+SUSPECTED FUEL LEAK and estimates the leak rate. While the alert is active, the
+status uses the lower of the standard and leak-adjusted predicted landing fuel.
+The standard prediction is always shown unchanged. Details and acceptance criteria:
+`docs/CR-001-leak-detection.md`.
+
 These categories are prototype criteria. They are loosely inspired by the ICAO
 reserve structure, but they are not ICAO or EASA fuel declarations.
 
@@ -85,5 +96,7 @@ reserve structure, but they are not ICAO or EASA fuel declarations.
 
 - Steady cruise only. There is no climb, descent, weight change or altitude effect on fuel flow.
 - A headwind changes ground speed only. Remaining distance is treated as exact.
+- Leak detection needs 10 minutes of valid data and is reset by a data gap. Leaks
+  below about 450 kg/h (75 kg per 10 min) may be detected late or not at all.
 - Sensor noise is Gaussian and seeded: fuel flow 1%, fuel on board 10 kg, ground speed 5 km/h.
 - The runtime uses the Python standard library only. It has no third-party dependencies.

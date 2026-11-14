@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 - Change request CR-001, suspected fuel leak detection (`docs/CR-001-leak-detection.md`), with requirements REQ-11 to REQ-14 and acceptance criteria AC-1 to AC-5.
+- Suspected fuel leak detection (CR-001): new `leak.py` module, leak-adjusted predicted landing fuel and conservative status rule in the monitor, `leak_detection` configuration section, `--leak-rate` simulator and CLI option (REQ-11 to REQ-14).
+- Leak detector, monitor integration and CLI tests.
 
 ### Known issues
 - **F-01:** unexplained fuel loss is not detected; warnings lag a loss-aware reference by up to 64 min (TC-B04). To be addressed by CR-001.
