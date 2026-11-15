@@ -5,13 +5,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-### Added
-- Change request CR-001, suspected fuel leak detection (`docs/CR-001-leak-detection.md`), with requirements REQ-11 to REQ-14 and acceptance criteria AC-1 to AC-5.
-- Suspected fuel leak detection (CR-001): new `leak.py` module, leak-adjusted predicted landing fuel and conservative status rule in the monitor, `leak_detection` configuration section, `--leak-rate` simulator and CLI option (REQ-11 to REQ-14).
-- Leak detector, monitor integration and CLI tests.
+## [1.1.0] – 2026-11-14
 
-### Known issues
-- **F-01:** unexplained fuel loss is not detected; warnings lag a loss-aware reference by up to 64 min (TC-B04). To be addressed by CR-001.
+Feature release implementing change request CR-001 (issue #17). All acceptance criteria AC-1 to AC-5 pass (`results/v1.1.0/verification.md`). Review: `docs/REVIEW.md`.
+
+### Added
+- Suspected fuel leak detection (`src/afrm/leak.py`): compares the drop in fuel on board with metered fuel flow over a 10-minute window and raises SUSPECTED FUEL LEAK above 75 kg (REQ-11, REQ-12).
+- Leak rate and leak-adjusted predicted landing fuel; while the alert is active, status uses the lower of the standard and leak-adjusted values (REQ-13, REQ-14). The standard prediction is unchanged.
+- `leak_detection` configuration section; `--leak-rate` option for `afrm simulate` and `afrm monitor`.
+- Change request `docs/CR-001-leak-detection.md`, requirements REQ-11 to REQ-14, test plan revision 2 (TC-V01 to TC-V10) and release review `docs/REVIEW.md`.
+- Verification and figure scripts (`scripts/verify_cr001.py`, `scripts/make_figures.py`) and results (`results/v1.1.0/`).
+- 28 new tests (135 in total), 100% statement and branch coverage.
+
+### Resolved
+- **F-01:** unexplained fuel loss is now detected. At 1,200 kg/h the median time to first AMBER/RED falls from 68 to 44 min, and at 600 kg/h from 95 to 48 min (100 seeds).
+
+### Known limitations
+- Narrow observed threshold margin: largest leak-free discrepancy 73.9 kg against 75 kg (R-02).
+- Alert drop-outs without persistence: at 600 kg/h a median of 3 per flight, about 3 min in total (R-03).
+- Conservative AMBER for small leaks that still land GREEN: 24 of 100 flights at 300 kg/h (R-04).
+- Leak rate under-estimated for up to 10 min after a leak starts (R-05); endurance and range are not leak-adjusted (R-06).
 
 ## [1.0.1] – 2026-11-14
 
