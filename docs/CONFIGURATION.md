@@ -43,6 +43,16 @@ git diff --stat v1.0.0 main -- src config tests
 
 The command produced no output, confirming that the source, configuration and tests on `main` are identical to the v1.0.0 baseline.
 
+### 2.2 Release history
+
+| Version | Type | Change | Record |
+|---|---|---|---|
+| v1.0.0 | Baseline | Assignment 1 release | Commit `755a087` |
+| v1.0.1 | PATCH | Defect DR-001: inexact simulated timestamps | Pull request #16, merge commit `d0ad677` |
+| v1.1.0 | MINOR | Change request CR-001: suspected fuel leak detection | Issue #17; `docs/CR-001-leak-detection.md`; review `docs/REVIEW.md` |
+
+Each release is an annotated tag on `main` with a GitHub release, created only after the pull request is merged and CI has passed.
+
 ## 3. Versioning
 
 [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) is used:

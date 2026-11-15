@@ -1,0 +1,35 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.9, pytest-9.1.1, pluggy-1.7.0
+rootdir: /Users/bilalahmad/Documents/afrm-prototype
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0
+collected 135 items
+
+tests/test_baseline_leak.py .....                                        [  3%]
+tests/test_cli.py ......                                                 [  8%]
+tests/test_leak.py ..............                                        [ 18%]
+tests/test_mcdc.py ........                                              [ 24%]
+tests/test_monitor.py ........................................           [ 54%]
+tests/test_monitor_leak.py ..........                                    [ 61%]
+tests/test_planner.py .................                                  [ 74%]
+tests/test_robustness.py ....                                            [ 77%]
+tests/test_scenarios.py ..........................                       [ 96%]
+tests/test_simulator.py .....                                            [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.14.9-final-0 _______________
+
+Name                    Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------
+src/afrm/__init__.py        1      0      0      0   100%
+src/afrm/cli.py           127      0     20      0   100%
+src/afrm/leak.py           39      0      6      0   100%
+src/afrm/models.py        135      0     12      0   100%
+src/afrm/monitor.py        82      0     34      0   100%
+src/afrm/planner.py        14      0      2      0   100%
+src/afrm/simulator.py      61      0     12      0   100%
+-------------------------------------------------------------------
+TOTAL                     459      0     86      0   100%
+Required test coverage of 90.0% reached. Total coverage: 100.00%
+============================= 135 passed in 0.23s ==============================

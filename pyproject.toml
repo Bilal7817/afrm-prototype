@@ -22,7 +22,7 @@ where = ["src"]
 [tool.ruff]
 target-version = "py314"
 line-length = 100
-src = ["src", "tests", "bench", "scripts"]
+src = ["src", "tests", "bench"]
 
 [tool.ruff.lint]
 # E/F: pycodestyle + Pyflakes (PEP 8, undefined names, unused imports)
@@ -40,9 +40,10 @@ strict = true
 warn_unreachable = true
 files = ["src", "tests", "bench", "scripts"]
 
-# NumPy is a benchmark-only dependency and is not installed in CI.
+# NumPy (benchmark) and Matplotlib (report figures) are optional tools,
+# not AFRM dependencies, and are not installed in CI.
 [[tool.mypy.overrides]]
-module = ["numpy", "numpy.*"]
+module = ["numpy", "numpy.*", "matplotlib", "matplotlib.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------- pytest

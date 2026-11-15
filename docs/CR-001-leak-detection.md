@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Change request | CR-001 |
-| GitHub issue | #17 |
+| GitHub issue | #ISSUE |
 | Baseline | v1.0.1 |
 | Target version | v1.1.0 (new feature, backwards compatible) |
 | Requirements | REQ-11 to REQ-14 (`docs/requirements.md`) |
@@ -90,6 +90,7 @@ Definitions:
 - AC-1 and AC-2 limits are the time for the leak to use the 225 kg contingency fuel (11.25 min and 22.5 min).
 - Seeds: 0–99 for AC-1 and AC-2; 0–999 for each of nominal and headwind for AC-3 and AC-4.
 - AC-3 interpretation: zero alerts in 2,000 independent flights gives an approximate 95% upper bound of 0.15% per flight (rule of three). It does not show the false-alarm rate is zero.
+- *Review note (R-01, 14 Nov 2026):* headwind flights reuse the nominal flight's sensor noise for the same seed, so the 2,000 flights are about 1,000 independent tests and the bound is about 0.3%. The criterion itself is unchanged. See `docs/REVIEW.md`.
 
 ## 6. Evaluation metrics (reported, not acceptance criteria)
 
